@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+      <title>MagicDuck</title>
+      <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+      <script src="https://telegram.org/js/telegram-web-app.js"></script>
+      <style>
+         @font-face {
+         font-family: 'HelveticaRegular';
+         src: url('Helvetica-Regular.ttf') format('truetype');
+         font-weight: normal;
+         font-style: normal;
+         }
+         body {
+         user-select: none;
+         background-image: linear-gradient(to bottom, #17252A, #a23326);
+         margin: 0;
+         overflow: hidden;
+         height: 100vh;
+         display: flex;
+         flex-direction: column;
+         justify-content: space-between;
+         align-items: center;
+         font-family: 'HelveticaRegular', sans-serif;
+         }
+         /* Стили для ПК (черный фон с текстом посередине) */
+         .desktop {
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         height: 100vh;
+         background-color: #17252A;
+         color: white;
+         text-align: center;
+         }
+         /* Скрыть основной контент по умолчанию */
+         .content {
+         display: none;
+         }
+         /* Стили для телефона */
+         .mobile .content {
+         display: block;
+         }
+         .mobile .desktop {
+         display: none;
+         }
+         .username {
+         position: fixed;
+         top: 10%;
+         left: 40%;
+         font-size: 30px;
+         font-weight: bold;
+         color: #2B7A78;
+         }
+         .duck-container {
+         flex: 1;
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         gap: 200px;
+         }
+         .menu {
+         position: fixed;
+         bottom: 0;
+         width: 100%;
+         height: 12%;
+         background: linear-gradient(rgb(229, 237, 238), rgb(187, 187, 187));
+         display: flex;
+         justify-content: space-around;
+         align-items: center;
+         box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.479);
+         border-top-left-radius: 20px;
+         border-top-right-radius: 20px;
+         }
+         .menu-item {
+         text-align: center;
+         color: #17252A;
+         font-size: 20px;
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+         }
+         .menu-item img {
+         width: 60px;
+         height: 60px;
+         margin-bottom: 4px;
+         }
+         .score {
+         position: fixed;
+         top: 20%;
+         left: 50%;
+         transform: translateX(-50%);
+         font-size: 40px;
+         color: #2B7A78;
+         font-weight: bold;
+         display: flex;
+         align-items: center;
+         gap: 10px;
+         }
+         .score img {
+         width: 70px;
+         height: 70px;
+         }
+         .duck {
+         cursor: pointer;
+         max-width: 60%;
+         max-height: 60%;
+         height: auto;
+         width: auto;
+         transition: transform 0.5s ease;
+         pointer-events: auto;
+         -webkit-tap-highlight-color: transparent;
+         }
+         /* Backdrop for menu */
+         .menu-backdrop {
+         position: fixed;
+         top: 0;
+         left: 0;
+         width: 100%;
+         height: 100%;
+         background-color: rgba(0, 0, 0, 0.4);
+         display: none;
+         justify-content: center;
+         align-items: flex-end;
+         z-index: 100;
+         }
+         .skins-menu {
+         position: relative;
+         width: 100%;
+         height: 40%;
+         background: linear-gradient(rgb(229, 237, 238), rgb(187, 187, 187));
+         border-top-left-radius: 20px;
+         border-top-right-radius: 20px;
+         box-shadow: 0px -4px 10px rgba(0, 0, 0, 0.5);
+         display: none;
+         flex-direction: column;
+         padding: 20px;
+         gap: 20px;
+         overflow-y: auto; /* Содержимое меню прокручивается */
+         }
+         #close-menu {
+         position: fixed; /* Меняем на fixed для независимости от содержимого меню */
+         top: 50%; /* Расположен относительно окна */
+         right: 2%; /* Расположен относительно окна */
+         width: 37px;
+         height: 37px;
+         background-color: rgb(226, 226, 226); /* Черный фон */
+         color: rgb(32, 32, 32); /* Белый цвет крестика */
+         font-size: 30px;
+         font-weight: bold;
+         display: flex;
+         justify-content: center; /* Центрирует крестик по горизонтали */
+         align-items: center; /* Центрирует крестик по вертикали */
+         cursor: pointer;
+         border-radius: 40%; /* Закругленный фон */
+         z-index: 1000; /* Убедитесь, что крестик всегда виден */
+         }
+         .header {
+         display: flex;
+         justify-content: space-between; /* Распределяет элементы по краям */
+         align-items: center; /* Выравнивает элементы по вертикали */
+         justify-content: center; /* Центрирует крестик по горизонтали */
+         }
+         .category {
+         font-size: 24px;
+         font-weight: bold;
+         margin-top: 10px;
+         }
+         .category1 {
+         font-size: 40px;
+         font-weight: bold;
+         margin-top: 10px;
+         }
+         .skins-carousel {
+         display: flex;
+         gap: 20px;
+         overflow-x: auto;
+         padding-bottom: 10px;
+         color: #17252A;
+         margin-bottom: 40px; /* Добавлен отступ между рядами */
+         }
+         .skin-item1.unlocked {
+         filter: none; /* Убираем фильтр для разблокированных скинов */
+         }
+         .skin-item2.unlocked {
+         filter: none; /* Убираем фильтр для разблокированных скинов */
+         }
+         .skin-item3.unlocked {
+         filter: none; /* Убираем фильтр для разблокированных скинов */
+         }
+         .skin-item4.unlocked {
+         filter: none; /* Убираем фильтр для разблокированных скинов */
+         }
+         .skin-item5.unlocked {
+         filter: none; /* Убираем фильтр для разблокированных скинов */
+         }
+         .skin-item6.unlocked {
+         filter: none; /* Убираем фильтр для разблокированных скинов */
+         }
+         .skin-item11.unlocked {
+         filter: none; /* Убираем фильтр для разблокированных скинов */
+         }
+         .skin-item111.unlocked {
+         filter: none; /* Убираем фильтр для разблокированных скинов */
+         }
+         .skin-item1111.unlocked {
+         filter: none; /* Убираем фильтр для разблокированных скинов */
+         }
+         .skin-item7.unlocked {
+         filter: none; /* Убираем фильтр для разблокированных скинов */
+         }
+         .skin-item1 {
+         flex: 0 0 auto;
+         width: 150px;
+         height: 150px;
+         position: relative;
+         cursor: pointer;
+         border-radius: 10px;
+         overflow: hidden;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+         filter: brightness(60%);
+         background: linear-gradient(
+         217deg,
+         rgba(255, 255, 0, 0.8),
+         rgba(255, 0, 0, 0) 70.71%
+         ),
+         linear-gradient(127deg, rgba(149, 165, 3, 0.8), rgba(0, 255, 0, 0) 70.71%),
+         linear-gradient(336deg, rgba(255, 230, 0, 0.8), rgba(0, 0, 255, 0) 70.71%);
+         }
+         .skin-item11 {
+         flex: 0 0 auto;
+         width: 150px;
+         height: 150px;
+         position: relative;
+         cursor: pointer;
+         border-radius: 10px;
+         overflow: hidden;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+         filter: brightness(60%);
+         background: linear-gradient(
+         217deg,
+         rgba(255, 255, 0, 0.8),
+         rgba(255, 0, 0, 0) 70.71%
+         ),
+         linear-gradient(127deg, rgba(0, 255, 0, 0.8), rgba(0, 255, 0, 0) 70.71%),
+         linear-gradient(336deg, rgba(0, 0, 255, 0.8), rgba(0, 0, 255, 0) 70.71%);
+         }
+         .skin-item111 {
+         flex: 0 0 auto;
+         width: 150px;
+         height: 150px;
+         position: relative;
+         cursor: pointer;
+         border-radius: 10px;
+         overflow: hidden;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+         filter: brightness(60%);
+         background: linear-gradient(
+         217deg,
+         rgba(255, 0, 0, 0.8),
+         rgba(255, 0, 0, 0) 70.71%
+         ),
+         linear-gradient(127deg, rgba(0, 238, 255, 0.8), rgba(0, 255, 0, 0) 70.71%),
+         linear-gradient(336deg, rgba(9, 255, 0, 0.8), rgba(0, 0, 255, 0) 70.71%);
+         }
+         /* Градиент, как на первой картинке */
+         .skin-item1111 {
+         flex: 0 0 auto;
+         width: 150px;
+         height: 150px;
+         position: relative;
+         cursor: pointer;
+         border-radius: 10px;
+         overflow: hidden;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+         filter: brightness(60%);
+         background: radial-gradient(circle at top left, #91b0d6, transparent 50%),
+         radial-gradient(circle at top right, #bfbae9, transparent 50%),
+         radial-gradient(circle at bottom right, #e4d9b3, transparent 50%),
+         radial-gradient(circle at bottom left, #a8d6d5, transparent 50%);
+         }
+         .skin-item7 {
+         flex: 0 0 auto;
+         width: 150px;
+         height: 150px;
+         position: relative;
+         cursor: pointer;
+         border-radius: 10px;
+         overflow: hidden;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+         filter: brightness(60%);
+         background: linear-gradient(
+         217deg,
+         rgba(255, 255, 0, 0.8),
+         rgba(255, 0, 0, 0) 70.71%
+         ),
+         linear-gradient(127deg, rgba(255, 115, 0, 0.8), rgba(0, 255, 0, 0) 70.71%),
+         linear-gradient(336deg, rgba(255, 0, 0, 0.8), rgba(0, 0, 255, 0) 70.71%);
+         }
+         .skin-item2 {
+         flex: 0 0 auto;
+         width: 150px;
+         height: 150px;
+         position: relative;
+         cursor: pointer;
+         border-radius: 10px;
+         overflow: hidden;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+         filter: brightness(60%);
+         background: linear-gradient(
+         217deg,
+         rgba(0, 255, 242, 0.8),
+         rgba(255, 0, 0, 0) 70.71%
+         ),
+         linear-gradient(127deg, rgba(0, 132, 255, 0.8), rgba(0, 255, 0, 0) 70.71%),
+         linear-gradient(336deg, rgba(0, 38, 255, 0.8), rgba(0, 0, 255, 0) 70.71%);
+         }
+         .skin-item3 {
+         flex: 0 0 auto;
+         width: 150px;
+         height: 150px;
+         position: relative;
+         cursor: pointer;
+         border-radius: 10px;
+         overflow: hidden;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+         filter: brightness(60%);
+         background: linear-gradient(
+         217deg,
+         rgba(58, 58, 58, 0.8),
+         rgba(255, 0, 0, 0) 70.71%
+         ),
+         linear-gradient(127deg, rgba(80, 80, 80, 0.8), rgba(0, 255, 0, 0) 70.71%),
+         linear-gradient(336deg, rgba(48, 48, 48, 0.8), rgba(0, 0, 255, 0) 70.71%);
+         }
+         .skin-item4 {
+         flex: 0 0 auto;
+         width: 150px;
+         height: 150px;
+         position: relative;
+         cursor: pointer;
+         border-radius: 10px;
+         overflow: hidden;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+         filter: brightness(60%);
+         background: linear-gradient(
+         217deg,
+         rgba(255, 255, 255, 0.8),
+         rgba(255, 0, 0, 0) 70.71%
+         ),
+         linear-gradient(127deg, rgba(189, 189, 189, 0.8), rgba(0, 255, 0, 0) 70.71%),
+         linear-gradient(336deg, rgba(141, 141, 141, 0.8), rgba(0, 0, 255, 0) 70.71%);
+         }
+         .skin-item5 {
+         flex: 0 0 auto;
+         width: 150px;
+         height: 150px;
+         position: relative;
+         cursor: pointer;
+         border-radius: 10px;
+         overflow: hidden;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+         filter: brightness(60%);
+         background: linear-gradient(
+         217deg,
+         rgba(247, 0, 255, 0.8),
+         rgba(255, 0, 0, 0) 70.71%
+         ),
+         linear-gradient(127deg, rgba(225, 0, 255, 0.8), rgba(0, 255, 0, 0) 70.71%),
+         linear-gradient(336deg, rgba(183, 0, 255, 0.8), rgba(0, 0, 255, 0) 70.71%);
+         }
+         .skin-item6 {
+         flex: 0 0 auto;
+         width: 150px;
+         height: 150px;
+         position: relative;
+         cursor: pointer;
+         border-radius: 10px;
+         overflow: hidden;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+         filter: brightness(60%);
+         background: linear-gradient(
+         217deg,
+         rgba(115, 255, 0, 0.8),
+         rgba(255, 0, 0, 0) 70.71%
+         ),
+         linear-gradient(127deg, rgba(77, 228, 85, 0.8), rgba(0, 255, 0, 0) 70.71%),
+         linear-gradient(336deg, rgba(18, 129, 8, 0.8), rgba(0, 0, 255, 0) 70.71%);
+         }
+         .skin-item1 img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         }
+         .skin-item11 img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         }
+         .skin-item111 img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         }
+         .skin-item1111 img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         }
+         .skin-item2 img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         }
+         .skin-item3 img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         }
+         .skin-item4 img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         }
+         .skin-item5 img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         }
+         .skin-item6 img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         }
+         .skin-item7 img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         }
+         .skin-price {
+         position: absolute;
+         bottom: 5px;
+         right: 5px;
+         background: rgba(0, 0, 0, 0.7);
+         color: #DEF2F1;
+         font-size: 14px;
+         padding: 2px 5px;
+         border-radius: 5px;
+         }
+         .skin-item.unlocked {
+         filter: none;
+         }
+         .chains {
+         position: absolute;
+         top: 0;
+         left: 0;
+         width: 100%;
+         height: 100%;
+         background-image: url('chains.png');
+         background-size: cover;
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         z-index: 1;
+         }
+         .particle {
+         position: absolute;
+         width: 5px;
+         height: 5px;
+         background-color: #DEF2F1;
+         border-radius: 50%;
+         animation: particle-animation 0.5s ease-out forwards;
+         pointer-events: none;
+         }
+         .icon {
+         width: 100px;
+         height: 100px;
+         margin: 0 auto 20px;
+         z-index: 100;
+         border-radius: 50%;
+         border: 2px solid #000000; /* Обводка вокруг аватарки */
+         background: #ccc no-repeat center center;
+         background-size: cover;
+         box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Тень для эстетики */
+         }
+         #energy-bar-container {
+      position: fixed;
+      top: 80%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      height: 70px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      flex-direction: column;
+  }
+
+  #energy-bar {
+      height: 10px;
+      background-color: #2B7A78;
+      width: 100%;
+      transition: width 0.3s ease;
+      border-radius: 20px;
+      margin-bottom: 10px;
+  }
+
+  #energy-text {
+      font-size: 25px;
+      color: white;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+
+  .low-energy {
+      animation: flash 1s infinite;
+  }
+
+  @keyframes flash {
+      0%, 100% {
+          filter: grayscale(0);
+      }
+      50% {
+          filter: grayscale(100%);
+      }
+  }
+         @keyframes particle-animation {
+         0% {
+         transform: translate(0, 0) scale(1);
+         opacity: 1;
+         }
+         100% {
+         transform: translate(var(--particle-x), var(--particle-y)) scale(0.5);
+         opacity: 0;
+         }
+         }
+         @media (max-height: 740px) {
+         .menu-item img {
+         width: 40px;
+         height: 40px;
+         }
+         .menu-item {
+         font-size: 15px;
+         }
+         .username {
+         font-size: 20px;
+         }
+         #close-menu {
+         width: 30px;
+         height: 30px;
+         font-size: 22px;
+         }
+         .duck {
+         max-width: 50%;
+         max-height: 50%;
+         }
+         .score {
+         font-size: 30px;
+         }
+         .score img {
+         width: 50px;
+         height: 50px;
+         }
+         #energy-bar-container {
+      height: 70px;
+  }
+
+  #energy-bar {
+      margin-bottom: 15px;
+  }
+
+  #energy-text {
+      font-size: 15px;
+  }
+         }
+         
+      </style>
+   </head>
+   <body>
+      <div class="username" id="username">Error 1</div>
+      <div class="score">
+         <img src="аирдроп кокос.png" alt="Coin Icon">
+         <span id="coin-count">0</span>
+      </div>
+      <div class="duck-container">
+         <img src="кокос.png" alt="Waving Duck" class="duck" id="duck">
+      </div>
+      <div class="menu">
+         <div class="menu-item">
+            <img src="игры кокос.png" alt="Games">
+            <span>Games</span>
+         </div>
+         <div class="menu-item" id="skins-button">
+            <img src="скины кокос_алмазный.png" alt="Skins">
+            <span>Skins</span>
+         </div>
+         <div class="menu-item">
+            <img src="кокос.png" alt="Home">
+            <span>Home</span>
+         </div>
+         <div class="menu-item">
+            <img src="прокачка кокос.png" alt="Upgrades">
+            <span>Upgrades</span>
+         </div>
+         <div class="menu-item">
+            <img src="лидерборды кокос.png" alt="Leader Board">
+            <span>Leader <br> Board</span>
+         </div>
+      </div>
+      <div class="menu-backdrop" id="menu-backdrop">
+         <div class="skins-menu" id="skins-menu">
+            <div id="close-menu">&times;</div>
+            <div class="header">
+               <div class="category1">Coconuts skins!</div>
+            </div>
+            <div>
+               <!-- Duck For Duck Section -->
+               <div>
+                  <div class="category">Classic Coconut</div>
+                  <div class="skins-carousel" id="duck-for-duck">
+                     <div class="skin-item1" data-cost="1000">
+                        <img src="туманный кокос.png" alt="Skin 1">
+                        <div class="skin-price">1K coconuts</div>
+                     </div>
+                     <div class="skin-item1" data-cost="10000">
+                        <img src="сердечки кокос.png" alt="Skin 1">
+                        <div class="skin-price">10K coconuts</div>
+                     </div>
+                     <div class="skin-item1" data-cost="25000">
+                        <img src="сок кокос.png" alt="Skin 1">
+                        <div class="skin-price">25K coconuts</div>
+                     </div>
+                     <div class="skin-item1" data-cost="75000">
+                        <img src="удочка кокос.png" alt="Skin 1">
+                        <div class="skin-price">75K coconuts</div>
+                     </div>
+                     <div class="skin-item1" data-cost="145000">
+                        <img src="кокос кокос.png" alt="Skin 1">
+                        <div class="skin-price">145K coconuts</div>
+                     </div>
+                     <div class="skin-item1" data-cost="345000">
+                        <img src="кит кокос.png" alt="Skin 1">
+                        <div class="skin-price">345K coconuts</div>
+                     </div>
+                     <div class="skin-item1" data-cost="678000">
+                        <img src="рак кокос.png" alt="Skin 1">
+                        <div class="skin-price">678K coconuts</div>
+                     </div>
+                     <div class="skin-item1" data-cost="1200000">
+                        <img src="планета кокос.png" alt="Skin 1">
+                        <div class="skin-price">1.2M coconuts</div>
+                     </div>
+                     <div class="skin-item1" data-cost="2500000">
+                        <img src="дракон с кокосом.png" alt="Skin 1">
+                        <div class="skin-price">2.5M coconuts</div>
+                     </div>
+                     <div class="skin-item1" data-cost="100000000">
+                        <img src="скины кокос_алмазный.png" alt="Skin 1">
+                        <div class="skin-price">2.5M coconuts</div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <script>
+let coins = 0;
+let energy = 2000;
+const maxEnergy = 2000;
+const energyRegenRate = 1;
+const lowEnergyThreshold = 150;
+const coinCountElement = document.getElementById('coin-count');
+const duck = document.getElementById('duck');
+const energyBarContainer = document.createElement('div');
+const energyBar = document.createElement('div');
+const energyText = document.createElement('div');
+const initialScale = 1;
+const maxScale = 1.3;
+let currentScale = initialScale;
+let shrinkTimeout;
+let isCooldown = false;
+
+// Добавляем контейнер для полоски энергии
+energyBarContainer.id = 'energy-bar-container';
+energyBar.id = 'energy-bar';
+energyText.id = 'energy-text';
+energyText.textContent = `${energy}/${maxEnergy}`;
+energyBarContainer.appendChild(energyBar);
+energyBarContainer.appendChild(energyText);
+document.body.appendChild(energyBarContainer);
+
+// Регулярное восстановление энергии
+setInterval(() => {
+    if (energy < maxEnergy) {
+        energy = Math.min(maxEnergy, energy + energyRegenRate);
+        updateEnergyDisplay();
+    }
+}, 1000);
+
+duck.addEventListener('click', () => {
+    if (energy > 0) {
+        const earnedCoins = Math.floor(Math.random() * 3) + 1;
+        coins += earnedCoins;
+        energy -= 1;
+        coinCountElement.textContent = coins;
+        updateEnergyDisplay();
+
+        // Увеличение размера утки при клике
+        currentScale = Math.min(maxScale, currentScale + 0.1);
+        duck.style.transform = `scale(${currentScale})`;
+        clearTimeout(shrinkTimeout);
+        shrinkTimeout = setTimeout(() => {
+            shrinkDuck();
+        }, 100);
+
+        // Проверка на низкую энергию
+        if (energy <= lowEnergyThreshold) {
+            duck.classList.add('low-energy');
+        } else {
+            duck.classList.remove('low-energy');
+        }
+    } else {
+        // Эффект при отсутствии энергии
+        duck.style.filter = 'brightness(0.5) saturate(2) hue-rotate(0deg) drop-shadow(0 0 10px red)';
+        setTimeout(() => {
+            duck.style.filter = '';
+        }, 500);
+    }
+});
+
+function shrinkDuck() {
+    if (currentScale > initialScale) {
+        currentScale = Math.max(initialScale, currentScale - 0.05);
+        duck.style.transform = `scale(${currentScale})`;
+        shrinkTimeout = setTimeout(() => {
+            shrinkDuck();
+        }, 50);
+    }
+}
+
+function updateEnergyDisplay() {
+    const energyPercentage = (energy / maxEnergy) * 100;
+    energyBar.style.width = `${energyPercentage}%`;
+    energyText.textContent = `${energy}/${maxEnergy}`;
+}
+
+
+                  function buySkin(skinElement) {
+                     const cost = parseInt(skinElement.getAttribute('data-cost'));
+                     const type = skinElement.getAttribute('data-type') || 'coins';
+                     if (type === 'coins' && coins >= cost) {
+                        coins -= cost;
+                        coinCountElement.textContent = coins;
+                        unlockSkin(skinElement);
+                     } else if (type === 'stars' && stars >= cost) {
+                        stars -= cost;
+                        unlockSkin(skinElement);
+                     } else {
+                        showPurchaseStatus('Not enough coins or stars!');
+                     }
+                     updateCurrencyDisplay();
+                  }
+                  function unlockSkin(skinElement) {
+             skinElement.classList.add('unlocked'); // Добавляем класс для разблокированного скина
+             skinElement.querySelector('.skin-price').textContent = 'Unlocked';
+             skinElement.removeEventListener('click', skinClickHandler);
+             skinElement.addEventListener('click', () => {
+                 selectSkin(skinElement);
+             });
+         }
+         
+                  function selectSkin(skinElement) {
+                     const skinImageSrc = skinElement.querySelector('img').getAttribute('src');
+                     const duckElement = document.getElementById('duck');
+                     duckElement.setAttribute('src', skinImageSrc);
+                  }
+                  function showPurchaseStatus(message) {
+                     skinPurchaseStatus.textContent = message;
+                     skinPurchaseStatus.style.display = 'block';
+                     setTimeout(() => {
+                        skinPurchaseStatus.style.display = 'none';
+                     }, 2000);
+                  }
+                  function skinClickHandler(event) {
+                     const skinElement = event.currentTarget;
+                     if (!skinElement.classList.contains('unlocked')) {
+                        buySkin(skinElement);
+                     }
+                  }
+                  document.querySelectorAll('.skin-item1').forEach((skinElement) => {
+                     skinElement.addEventListener('click', skinClickHandler);
+                  });
+                  document.querySelectorAll('.skin-item2').forEach((skinElement) => {
+                     skinElement.addEventListener('click', skinClickHandler);
+                  });
+                  document.querySelectorAll('.skin-item3').forEach((skinElement) => {
+                     skinElement.addEventListener('click', skinClickHandler);
+                  });
+                  document.querySelectorAll('.skin-item4').forEach((skinElement) => {
+                     skinElement.addEventListener('click', skinClickHandler);
+                  });
+                  document.querySelectorAll('.skin-item5').forEach((skinElement) => {
+                     skinElement.addEventListener('click', skinClickHandler);
+                  });
+                  document.querySelectorAll('.skin-item6').forEach((skinElement) => {
+                     skinElement.addEventListener('click', skinClickHandler);
+                  });
+                  document.querySelectorAll('.skin-item11').forEach((skinElement) => {
+                     skinElement.addEventListener('click', skinClickHandler);
+                  });
+                  document.querySelectorAll('.skin-item111').forEach((skinElement) => {
+                     skinElement.addEventListener('click', skinClickHandler);
+                  });
+                  document.querySelectorAll('.skin-item1111').forEach((skinElement) => {
+                     skinElement.addEventListener('click', skinClickHandler);
+                  });
+                  document.querySelectorAll('.skin-item7').forEach((skinElement) => {
+                     skinElement.addEventListener('click', skinClickHandler);
+                  });
+                  const skinsButton = document.getElementById('skins-button');
+                  const skinsMenu = document.getElementById('skins-menu');
+                  const menuBackdrop = document.getElementById('menu-backdrop');
+                  const closeMenu = document.getElementById('close-menu');
+                  skinsButton.addEventListener('click', () => {
+                     menuBackdrop.style.display = 'flex';
+                     skinsMenu.style.display = 'flex';
+                  });
+                  closeMenu.addEventListener('click', () => {
+                     closeSkinsMenu();
+                  });
+                  menuBackdrop.addEventListener('click', (e) => {
+                     if (e.target === menuBackdrop) {
+                        closeSkinsMenu();
+                     }
+                  });
+                  function closeSkinsMenu() {
+                     menuBackdrop.style.display = 'none';
+                     skinsMenu.style.display = 'none';
+                  }
+              
+         
+                  const user = tg.initDataUnsafe?.user || {};
+                  const username = user.username || `${user.first_name || ''} ${user.last_name || ''}`.trim();
+              
+                  // Отображение имени
+                  const usernameElement = document.getElementById('username');
+                  if (username) {
+                      usernameElement.textContent = `Hello, ${username}!`;
+                  } else {
+                      usernameElement.textContent = 'Error 1';
+                  }
+                  // Инициализация Telegram Web App
+                  const tg = window.Telegram.WebApp;
+         
+         // Применяем режим полного экрана для мини-приложения
+         window.Telegram.WebApp.expand();
+         window.Telegram.WebApp.requestFullscreen();
+         
+         // Убедитесь, что Web App готов
+         tg.ready();
+              
+      </script>
+   </body>
+</html>
